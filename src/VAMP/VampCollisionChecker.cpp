@@ -1,19 +1,23 @@
 //
 // Created by airlab on 1/23/26.
+// VAMP collision checker with manual collision checking to avoid template issues
 //
 
-#include "vamp/VampCollisionChecker.h"
-#include "vamp/robots/sphere.hh"
-#include "vamp/collision/factory.hh"
+#include "CollisionChecker.hh"
 #include "vamp/collision/environment.hh"
+#include "vamp/collision/shapes.hh"
+#include "vamp/collision/sphere_cuboid.hh"
+#include "vamp/collision/math.hh"
+#include <cmath>
+
 namespace vc = vamp::collision;
-namespace vf = vamp::collision::factory;
 
 namespace vamp {
 
 struct VampCollisionChecker::Impl {
-
     vc::Environment<float> env_;
+    float _robotRadius;
+    bool is3DObstacles{true};
 
     Impl(const ParamPtr& pm) {
         _robotRadius = pm->get_param<float>("robot_radius");
@@ -21,32 +25,71 @@ struct VampCollisionChecker::Impl {
         auto obstacles = pm->get_ndarray<float>("obstacles");
         auto obs_len = pm->get_param<float>("obstacle_length");
 
+        // Build environment for collision checking
         for(const auto& obs: obstacles)
         {
-            std::vector<float>temp(3, 0.0);
-            for (int j = 0; j < obs.size() || j < temp.size(); j++)
+            is3DObstacles = obs.size() > 2;
+            std::vector<float> temp(3, 0.0f);
+            for (size_t j = 0; j < obs.size() && j < temp.size(); j++)
                 temp[j] = obs[j];
+            
+            // Create cuboid obstacles
             env_.cuboids.push_back(vc::Cuboid<float>(
-                    temp[0], temp[1], temp[2],
-                    1.0, 0.0, 0.0,
-                    0.0, 1.0, 0.0,
-                    0.0, 0.0, 1.0,
-                    obs_len, obs_len, obs_len
+                temp[0], temp[1], temp[2],
+                1.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f,
+                0.0f, 0.0f, 1.0f,
+                obs_len, obs_len, obs_len
             ));
         }
-        env_.sort(); // Sort the obstacles
+        env_.sort(); // Sort for early termination optimization
     }
 
+    // Manual sphere-cuboid collision check for scalar float types
+    bool checkSphereCuboidCollision(const vc::Cuboid<float>& cuboid, 
+                                     float sx, float sy, float sz, float radius) const {
+        const float rsq = radius * radius;
+        
+        // Vector from sphere center to cuboid center
+        const float xs = sx - cuboid.x;
+        const float ys = sy - cuboid.y;
+        const float zs = sz - cuboid.z;
 
-    bool isWorkspaceCollision(float wx, float wy) const {
+        // Project onto cuboid axes and clamp to half-extents
+        const float a1_proj = std::abs(cuboid.axis_1_x * xs + cuboid.axis_1_y * ys + cuboid.axis_1_z * zs);
+        const float a2_proj = std::abs(cuboid.axis_2_x * xs + cuboid.axis_2_y * ys + cuboid.axis_2_z * zs);
+        const float a3_proj = std::abs(cuboid.axis_3_x * xs + cuboid.axis_3_y * ys + cuboid.axis_3_z * zs);
 
+        const float a1 = std::max(0.0f, a1_proj - cuboid.axis_1_r);
+        const float a2 = std::max(0.0f, a2_proj - cuboid.axis_2_r);
+        const float a3 = std::max(0.0f, a3_proj - cuboid.axis_3_r);
+
+        // Squared distance from sphere center to nearest point on cuboid
+        const float dist_sq = a1 * a1 + a2 * a2 + a3 * a3;
+        
+        // Collision if distance is less than radius
+        return dist_sq <= rsq;
+    }
+
+    bool isWorkspaceCollision(float wx, float wy, float wz) const {
+        const float max_extent = std::sqrt(wx * wx + wy * wy + wz * wz) + _robotRadius;
+        
+        // Check collision with all cuboid obstacles
+        for (const auto& cuboid : env_.cuboids) {
+            const float diff = cuboid.min_distance - max_extent;
+            
+            // Early termination: if min_distance > max_extent, no further checks needed
+            if (diff > 0.0f) {
+                break;
+            }
+            
+            if (checkSphereCuboidCollision(cuboid, wx, wy, wz, _robotRadius)) {
+                return true;
+            }
+        }
+        
         return false;
     }
-
-private:
-    float _robotRadius;
-    float _x_min, _x_max, _y_min, _y_max;
-
 };
 
 VampCollisionChecker::VampCollisionChecker(const ParamPtr &pm)
@@ -54,17 +97,25 @@ VampCollisionChecker::VampCollisionChecker(const ParamPtr &pm)
     pimpl_ = std::make_unique<Impl>(pm);
 }
 
+VampCollisionChecker::~VampCollisionChecker() = default;
 
 bool VampCollisionChecker::isCollision(const std::vector<Eigen::VectorXd> &trajectory) const {
-    for (int j = trajectory.size(); j-- > 0;) {
-        auto state = trajectory[j];
-        float wx = state(0);
-        float wy = state(1);
-        if(pimpl_->isWorkspaceCollision(wx, wy))
-        {
+    if (trajectory.empty()) {
+        return false;
+    }
+
+    // Check each point in the trajectory
+    for (const auto& state : trajectory) {
+        const float wx = static_cast<float>(state(0));
+        const float wy = static_cast<float>(state(1));
+        const float wz = state.size() > 2 ? static_cast<float>(state(2)) : 0.0f;
+        
+        if (pimpl_->isWorkspaceCollision(wx, wy, wz)) {
             return true;
         }
     }
-    return false;
+    
+    return false; // No collision detected
 }
-} // vamp
+
+} // namespace vamp

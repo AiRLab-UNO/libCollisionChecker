@@ -2,7 +2,8 @@
 // Created by airlab on 1/23/26.
 //
 
-#include "FCL/FCL.h"
+
+#include "CollisionChecker.hh"
 #include <fcl/fcl.h>
 namespace fcl {
     struct FCL::Impl {
@@ -27,10 +28,10 @@ namespace fcl {
                     fcl::Transform3f pose = fcl::Transform3f::Identity();
                     pose.linear() = Eigen::Quaternionf::Identity().matrix();
                     _is3Dobs = o.size() > 2;
-                    //                if (_is3Dobs)
-                    //                    pose.translation() = Eigen::Vector3f(float(o.at(0)), float(o.at(1)), float( o.at(3) ) );
-                    //                else
-                    pose.translation() = Eigen::Vector3f(float(o.at(0)), float(o.at(1)), 0.0f);
+                    std::vector<float>temp(3, 0.0);
+                    for (int j = 0; j < o.size() || j < temp.size(); j++)
+                        temp[j] = o[j];
+                    pose.translation() = Eigen::Vector3f(temp[0], temp[1], temp[2]);
                     _obs_list.emplace_back(new fcl::CollisionObject<float>(geom, pose));
                 }
 

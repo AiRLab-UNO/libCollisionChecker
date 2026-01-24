@@ -1,0 +1,17 @@
+# Google Test - Additions for .gitignore
+
+# Add these lines to your .gitignore file to exclude test build artifacts
+
+# Test executables
+tests/octree_collision_checker_test
+tests/quadtree_collision_checker_test
+tests/occupancy_map_test
+tests/fcl_collision_checker_test
+
+# Test results
+Testing/
+*.xml
+LastTest.log
+
+# GTest output
+gtest_*.xml

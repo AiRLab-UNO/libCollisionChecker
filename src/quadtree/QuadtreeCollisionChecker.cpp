@@ -2,7 +2,8 @@
 // Created by airlab on 1/23/26.
 //
 
-#include "quadtree/QuadtreeCollisionChecker.h"
+
+#include "CollisionChecker.hh"
 #include "quadtree/olcUTIL_QuadTree.h"
 
 namespace quadtree {
@@ -79,6 +80,8 @@ QuadtreeCollisionChecker::QuadtreeCollisionChecker(const ParamPtr &pm)
     pimpl_ = std::make_unique<Impl>(pm);
 }
 
+QuadtreeCollisionChecker::~QuadtreeCollisionChecker() = default;
+
 
 bool QuadtreeCollisionChecker::isCollision(const std::vector<Eigen::VectorXd> &trajectory) const {
     for (int j = trajectory.size(); j-- > 0;) {
@@ -93,4 +96,4 @@ bool QuadtreeCollisionChecker::isCollision(const std::vector<Eigen::VectorXd> &t
     return false;
 }
 
-} // occupancy
+} // quadtree

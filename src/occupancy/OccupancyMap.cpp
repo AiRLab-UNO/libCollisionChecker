@@ -2,7 +2,7 @@
 // Created by airlab on 1/23/26.
 //
 
-#include "occupancy/OccupancyMap.h"
+#include "CollisionChecker.hh"
 #include "occupancy/image_parser.h"
 
 namespace occupancy {
