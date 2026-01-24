@@ -1,0 +1,44 @@
+max_speed: 1.0
+min_speed: 0.0
+max_yawrate: 0.6981
+max_accel: 0.5
+max_dyawrate: 2.0472
+
+dt: 0.1
+predict_time: 3.0 #1.85
+
+goal_radius: 0.3
+robot_radius: 0.345
+obstacle_length: 0.25
+v_reso: 0.013
+yawrate_reso: 0.051745329
+
+to_goal_cost_gain: 0.3
+to_obstacle_cost_gain: 0.16
+speed_cost_gain: 1.0
+
+name: "env_noncovex"
+start: [5.89, 1.47, 1.5707]
+goal: [17.47, 8.72]
+
+pref_speed_index: 7
+num_samples: 5 # number of samples for limbo parameter
+boundary: [0.0, 20.0, 0.0, 20.0]
+origin: [0.0, 0.0]
+
+collision_checker: fcl
+
+
+
+obstacles: []
+triangles:
+  - [[12.0, 1.533], [9.867, 5.533], [14.133, 4.067]]
+  - [[12.0, 1.533], [14.133, 4.067], [18.267, 3.067]]
+  - [[18.267, 3.067], [14.133, 4.067], [15.0, 6.467]]
+  - [[2.2, 2.667], [2.933, 6.267], [4.467, 3.667]]
+  - [[4.467, 3.667], [2.933, 6.267], [5.0, 7.267]]
+  - [[4.467, 3.667], [2.933, 6.267], [5.0, 7.267]]
+  - [[5.0, 7.267], [2.933, 6.267], [5.6, 9.933]]
+  - [[5.0, 7.267], [5.6, 9.933], [8.533, 6.467]]
+  - [[12.6, 6.8], [16.667, 11.0], [10.533, 8.8]]
+

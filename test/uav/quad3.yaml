@@ -1,0 +1,32 @@
+start: [0.2, 0.2, 0.0, 1.5707]
+goal: [6.0, 6.0, 3.5]
+
+obstacle_length: 0.5
+obstacles: [
+  [0.5, 0.5, 1], [1.5, 0.5, 1], [2.5, 1.5, 1], [3.5, 1, 1],
+  [4.5, 0.5, 1], [5, 2, 1], [2, 3, 1], [3, 3, 1], [4, 3, 1],
+  [5, 3, 1], [2.5, 4.5, 2], [3.5, 4.5, 2], [4.5, 4.5, 2],
+  [1, 5, 2], [3, 5, 2], [5, 5, 2], [7, 5, 2], [2, 7, 2]
+]
+boundary: [0, 0, 0, 10, 10, 10]
+
+max_velocity_x: 1.0  # Set appropriate value
+min_velocity_x: -1.0  # Set appropriate value
+max_velocity_y: 1.0  # Set appropriate value
+min_velocity_y: -1.0  # Set appropriate value
+max_velocity_z: 1.0  # Set appropriate value
+min_velocity_z: -1.0  # Set appropriate value
+max_angular_vel: 0.6981  # Set appropriate value
+dt: 0.1  # Set appropriate value
+goal_radius: 0.345  # Set appropriate value
+robot_radius: 0.345  # Set appropriate value
+predict_time: 3.0  # Set appropriate value
+pref_speed_index: 5
+num_samples: 5 # number of samples for limbo parameter
+
+solver_time: 30.0
+collision_checker: "octree"
+max_speed: 1.0
+min_speed: 0.0
+max_yawrate: 0.6981
+state_dim: 8
