@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.22)
 project(libCollisionChecker)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -7,14 +7,19 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -O3 -g)
 endif()
 
-
+include(cmake/CPM.cmake)
+CPMAddPackage(
+    NAME YAML-CPP
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG 0.8.0
+)
 include_directories(include)
 find_package(Eigen3 REQUIRED)
 
 option(BUILD_CC_OCTREE "BUILD OCTREE COLLISION CHECKER" ON)
 option(BUILD_CC_QUAD_TREE "BUILD QUADTREE COLLISION CHECKER" ON)
 option(BUILD_CC_OCCUPANCY_MAP "BUILD OCCUPANCY MAP COLLISION CHECKER" ON)
-option(BUILD_CC_FCL "BUILD FCL COLLISION CHECKER" OFF)
+option(BUILD_CC_FCL "BUILD FCL COLLISION CHECKER" ON)
 option(BUILD_CC_VAMP "BUILD VAMP COLLISION CHECKER" ON)
 option(BUILD_TESTING "BUILD TESTS" ON)
 
@@ -63,7 +68,7 @@ endif()
 
 
 if(BUILD_CC_FCL)
-    find_package(YAML-CPP REQUIRED)
+
     find_package(FCL REQUIRED)
     find_package(CCD REQUIRED)
     add_library(FCL SHARED ${CC_FCL})

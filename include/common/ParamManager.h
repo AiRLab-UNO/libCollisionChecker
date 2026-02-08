@@ -117,7 +117,20 @@ namespace YAML {
 
 class param_manager : public std::enable_shared_from_this<param_manager> {
 public:
+    param_manager() = default;
     explicit param_manager(const std::string& file) : config_(YAML::LoadFile(file)) {}
+
+    template<class T>
+    void add_param(const std::string& field, const T& value) {
+        config_[field] = value;
+    }
+
+    template<class T>
+    void add_ndarray(const std::string& field, const std::vector<std::vector<T>>& value) {
+        Matrix2D<T> m;
+        m.data = value;
+        config_[field] = m;
+    }
 
     bool has_param(const std::string& field) const {
         return config_[field].IsDefined();
