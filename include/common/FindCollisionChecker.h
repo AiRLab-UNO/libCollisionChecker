@@ -49,12 +49,30 @@ triangles ->FCL
 
 }
  */
-enum collision_checker_type {
+enum class collision_checker_type {
     FCL = 10,
     VAMP,
     QUADTREE,
     OCTREE,
     OCCUPANCY
+};
+
+enum obstacle_type {
+    BOX = 1,
+    TRIANGLES,
+    IMAGE
+};
+
+enum dimension_type {
+    DIM_2D = 4,
+    DIM_3D
+};
+
+enum shape_type {
+    RECTANGLE = 6,
+    SQUARE,
+    CUBE,
+    CUBOID
 };
 
 class FindCollisionChecker {
@@ -76,7 +94,7 @@ public:
         for (int node : plan) {
             if (graph_.find(node) != graph_.end()) {
                 for (int checker : graph_[node]) {
-                    if(checker >= FCL && checker <= OCCUPANCY) // Ensure it's a valid checker type
+                    if(checker >= 10) // Ensure it's a valid checker type
                         checkers.push_back(static_cast<collision_checker_type>(checker));
                 }
             }
@@ -88,19 +106,19 @@ public:
         std::cout << "Available Collision Checkers: ";
         for (const auto& checker : checkers) {
             switch (checker) {
-                case OCCUPANCY:
+                case collision_checker_type::OCCUPANCY:
                     std::cout << "OCCUPANCY ";
                     break;
-                case FCL:
+                case collision_checker_type::FCL:
                     std::cout << "FCL ";
                     break;
-                case VAMP:
+                case collision_checker_type::VAMP:
                     std::cout << "VAMP ";
                     break;
-                case QUADTREE:
+                case collision_checker_type::QUADTREE:
                     std::cout << "QUADTREE ";
                     break;
-                case OCTREE:
+                case collision_checker_type::OCTREE:
                     std::cout << "OCTREE ";
                     break;
                 default:
@@ -112,26 +130,6 @@ public:
 
 
 private:
-    enum obstacle_type {
-        BOX = 1,
-        TRIANGLES,
-        IMAGE
-    };
-
-    enum dimension_type {
-        DIM_2D = 4,
-        DIM_3D
-    };
-
-    enum shape_type {
-        RECTANGLE = 6,
-        SQUARE,
-        CUBE,
-        CUBOID
-    };
-
-
-
     ParamPtr pm_;
     std::map<int, std::vector<int>> graph_;
 protected:
@@ -144,11 +142,11 @@ protected:
         graph_[6] = {10, 11, 12}; // rectangle -> FCL, VAMP, QUADTREE
         graph_[7] = {10, 11, 12}; // square -> FCL, VAMP, QUADTREE
         graph_[8] = {13, 10, 11}; // cube -> OCTREE, FCL, VAMP
-        graph_[9] = {13, 10, 11}; // cuboid -> OCTREE, FCL, VAMP
+        graph_[9] = {10, 11}; // cuboid ->  FCL, VAMP
         graph_[2] = {10};       // triangles -> FCL
         graph_[3] = {14};       // image -> OCCUPANCY
     }
-
+public:
     int getDimensionType() {
         int obstacleType = getObstacleType();
         if(obstacleType != BOX)

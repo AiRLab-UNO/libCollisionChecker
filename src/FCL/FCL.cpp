@@ -4,49 +4,83 @@
 
 
 #include "CollisionChecker.hh"
+#include "common/FindCollisionChecker.h"
 #include <fcl/fcl.h>
+#include <algorithm>
 namespace fcl {
     struct FCL::Impl {
         Impl(const ParamPtr& pm) {
-            float obsLen = pm->get_param<float>("obstacle_length");
-            auto obsList = pm->get_ndarray<float>("obstacles");
+
             _robotRadius = pm->get_param<float>("robot_radius");
             _boundary = pm->get_param<std::vector<float>>("boundary");
-            
             _robotGeom = std::make_shared<fcl::Sphere<float>>(_robotRadius);
-            
+            initialize_manager(pm);
+        }
+
+        void initialize_manager(const ParamPtr& pm) {
             // Initialize the collision manager first
             _manager = std::make_shared<fcl::DynamicAABBTreeCollisionManagerf>();
 
-            if (pm->has_param("triangles")) {
+            // Use FindCollisionChecker to determine the type of obstacles and load them accordingly
+            FindCollisionChecker finder(pm);
+            auto plan = finder.get_plan();
+            auto checkers = finder.available_checkers(plan);
+            // `FCL` is also the name of this class (fcl::FCL). Use the global-scope enum value to avoid
+            // colliding with the class name inside namespace fcl.
+            if(std::count(checkers.begin(), checkers.end(), collision_checker_type::FCL) == 0) {
+                std::cerr << "FCL is not an available checker for the given environment." << std::endl;
+                exit(1);
+            }
+
+
+            if(plan[0] == TRIANGLES) {
                 setTriangles(pm->get_triangles());
             }
+            else if(plan[0] == BOX) {
+               auto obsLen = pm->get_param<float>("obstacle_length");
+               obsLen *= 2.0f; // Convert half-length to full length for FCL box geometry
+               for(auto& box : pm->get_ndarray<float>("obstacles")) {
+                   switch (plan[2]) {
+                       case RECTANGLE:
+                                setBox({box[0], box[1], 0.0f, box[2], box[3], obsLen});
+                           break;
+                       case SQUARE:
+                                setBox({box[0], box[1], 0.0f, obsLen, obsLen, obsLen});
+                           break;
+                       case CUBE:
+                                _is3Dobs = true;
+                                setBox({box[0], box[1], box[2], obsLen, obsLen, obsLen});
+                           break;
+                       case CUBOID:
+                                _is3Dobs = true;
+                                setBox({box[0], box[1], box[2], box[3], box[4], box[5]});
+                           break;
+                       default:
+                           std::cerr << "Unknown shape type in plan: " << plan[2] << std::endl;
+                   }
+               }
+             }
 
-            if (!obsList.empty()) {
-                obsLen *= 2.0f;
-                auto geom = std::make_shared<fcl::Box<float>>(obsLen, obsLen, obsLen);
-
-                for (const auto& o : obsList) {
-                    fcl::Transform3f pose = fcl::Transform3f::Identity();
-                    pose.linear() = Eigen::Quaternionf::Identity().matrix();
-                    _is3Dobs = o.size() > 2;
-                    
-                    Eigen::Vector3f translation = Eigen::Vector3f::Zero();
-                    for (size_t j = 0; j < o.size() && j < 3; j++)
-                        translation[j] = o[j];
-                    
-                    pose.translation() = translation;
-                    _obs_list.emplace_back(std::make_shared<fcl::CollisionObject<float>>(geom, pose));
-                }
-
-                std::vector<fcl::CollisionObject<float>*> raw_obs_list;
-                raw_obs_list.reserve(_obs_list.size());
-                for (auto& obj : _obs_list) {
-                    raw_obs_list.push_back(obj.get());
-                }
-                _manager->registerObjects(raw_obs_list);
-                _manager->setup();
+            // configure the collision manager with the loaded obstacles
+            std::vector<fcl::CollisionObject<float>*> raw_obs_list;
+            raw_obs_list.reserve(_obs_list.size());
+            for (auto& obj : _obs_list) {
+                raw_obs_list.push_back(obj.get());
             }
+            _manager->registerObjects(raw_obs_list);
+            _manager->setup();
+        }
+
+        void setBox(const std::array<float, 6>& box){
+
+            fcl::Transform3f pose = fcl::Transform3f::Identity();
+            pose.linear() = Eigen::Quaternionf::Identity().matrix();
+            auto geom = std::make_shared<fcl::Box<float>>(box[3],box[4], box[5]);
+            Eigen::Vector3f translation = Eigen::Vector3f::Zero();
+            for (size_t j = 0; j < 3; j++)
+                translation[j] = box[j];
+            pose.translation() = translation;
+            _obs_list.emplace_back(std::make_shared<fcl::CollisionObject<float>>(geom, pose));
         }
 
         virtual ~Impl() = default;
@@ -57,13 +91,29 @@ namespace fcl {
             }
 
             if (_boundary.size() == 4) {
-                for (const auto& state : trajectory) {
-                    if (state(0) < _boundary[0] || state(0) > _boundary[1] ||
-                        state(1) < _boundary[2] || state(1) > _boundary[3]) {
+
+            }
+
+            for (const auto& state : trajectory) {
+                float wx = static_cast<float>(state(0));
+                float wy = static_cast<float>(state(1));
+                float wz = static_cast<float>(state(2));
+                // check boundary violations
+                if(_boundary.size() == 4) {
+                    if (wx < _boundary[0] || wx > _boundary[1] ||
+                        wy < _boundary[2] || wy > _boundary[1]) {
+                        return true;
+                    }
+                } else if(_boundary.size() == 6) {
+                    if (wx < _boundary[0] || wx > _boundary[3] ||
+                        wy < _boundary[1] || wy > _boundary[4] ||
+                        wz < _boundary[2] || wz > _boundary[5]) {
                         return true;
                     }
                 }
             }
+
+
 
             std::vector<std::shared_ptr<fcl::CollisionObject<float>>> trajectory_objects;
             trajectory_objects.reserve(trajectory.size());

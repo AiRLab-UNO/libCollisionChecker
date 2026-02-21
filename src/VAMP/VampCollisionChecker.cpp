@@ -9,7 +9,7 @@
 #include "vamp/collision/sphere_cuboid.hh"
 #include "vamp/collision/math.hh"
 #include <cmath>
-
+#include "common/FindCollisionChecker.h"
 namespace vc = vamp::collision;
 
 namespace vamp {
@@ -18,31 +18,73 @@ struct VampCollisionChecker::Impl {
     vc::Environment<float> env_;
     float _robotRadius;
     bool is3DObstacles{true};
+    std::vector<float> _boundary;
 
     Impl(const ParamPtr& pm) {
         _robotRadius = pm->get_param<float>("robot_radius");
-        auto boundary = pm->get_param<std::vector<float>>("boundary");
-        auto obstacles = pm->get_ndarray<float>("obstacles");
-        auto obs_len = pm->get_param<float>("obstacle_length");
+        _boundary = pm->get_param<std::vector<float>>("boundary");
+        initialize_manager(pm);
 
-        // Build environment for collision checking
-        for(const auto& obs: obstacles)
-        {
-            is3DObstacles = obs.size() > 2;
-            std::vector<float> temp(3, 0.0f);
-            for (size_t j = 0; j < obs.size() && j < temp.size(); j++)
-                temp[j] = obs[j];
-            
-            // Create cuboid obstacles
-            env_.cuboids.push_back(vc::Cuboid<float>(
-                temp[0], temp[1], temp[2],
+
+    }
+
+
+    void initialize_manager(const ParamPtr& pm) {
+             // Use FindCollisionChecker to determine the type of obstacles and load them accordingly
+        FindCollisionChecker finder(pm);
+        auto plan = finder.get_plan();
+        auto checkers = finder.available_checkers(plan);
+        // `FCL` is also the name of this class (fcl::FCL). Use the global-scope enum value to avoid
+        // colliding with the class name inside namespace fcl.
+        if(std::count(checkers.begin(), checkers.end(), collision_checker_type::FCL) == 0) {
+            std::cerr << "VAMP is not an available checker for the given environment." << std::endl;
+            exit(1);
+        }
+
+
+        if(plan[0] != BOX) {
+            std::cerr << "VAMP does not support obstacle type. (make sure obs_type is BOX)" << std::endl;
+            exit(1);
+        }
+
+        auto obsLen = pm->get_param<float>("obstacle_length");
+        obsLen *= 2.0f; // Convert half-length to full length for FCL box geometry
+        for(auto& box : pm->get_ndarray<float>("obstacles")) {
+            switch (plan[2]) {
+                case RECTANGLE:
+                    setBox({box[0], box[1], 0.0f, box[2], box[3], obsLen});
+                    break;
+                case SQUARE:
+                    setBox({box[0], box[1], 0.0f, obsLen, obsLen, obsLen});
+                    break;
+                case CUBE:
+                    is3DObstacles = true;
+                    setBox({box[0], box[1], box[2], obsLen, obsLen, obsLen});
+                    break;
+                case CUBOID:
+                    is3DObstacles = true;
+                    setBox({box[0], box[1], box[2], box[3], box[4], box[5]});
+                    break;
+                default:
+                    std::cerr << "Unknown shape type in plan: " << plan[2] << std::endl;
+            }
+        }
+        env_.sort(); // Sort for early termination optimization
+
+
+    }
+
+    void setBox(const std::array<float, 6>& box){
+
+        // Create cuboid obstacles
+        env_.cuboids.push_back(vc::Cuboid<float>(
+                box[0], box[1], box[2],
                 1.0f, 0.0f, 0.0f,
                 0.0f, 1.0f, 0.0f,
                 0.0f, 0.0f, 1.0f,
-                obs_len, obs_len, obs_len
-            ));
-        }
-        env_.sort(); // Sort for early termination optimization
+                box[3], box[4], box[5]
+        ));
+
     }
 
     // Manual sphere-cuboid collision check for scalar float types
@@ -72,6 +114,21 @@ struct VampCollisionChecker::Impl {
     }
 
     bool isWorkspaceCollision(float wx, float wy, float wz) const {
+
+        // check boundary violations
+        if(_boundary.size() == 4) {
+             if (wx < _boundary[0] || wx > _boundary[1] ||
+                wy < _boundary[2] || wy > _boundary[1]) {
+                return true;
+            }
+        } else if(_boundary.size() == 6) {
+            if (wx < _boundary[0] || wx > _boundary[3] ||
+                wy < _boundary[1] || wy > _boundary[4] ||
+                wz < _boundary[2] || wz > _boundary[5]) {
+                    return true;
+            }
+        }
+
         const float max_extent = std::sqrt(wx * wx + wy * wy + wz * wz) + _robotRadius;
         
         // Check collision with all cuboid obstacles

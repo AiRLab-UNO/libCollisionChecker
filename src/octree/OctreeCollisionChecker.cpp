@@ -5,6 +5,7 @@
 #include "CollisionChecker.hh"
 #include "octree/OctreeCpp.h"
 #include <iostream>
+#include "common/FindCollisionChecker.h"
 namespace octree {
     struct OctreeCollisionChecker::Impl {
         struct vec {
@@ -23,6 +24,14 @@ namespace octree {
         Impl(const ParamPtr &pm) {
             boundary = pm->get_param<std::vector<float>>("boundary");
 
+            // Use FindCollisionChecker to determine the type of obstacles and load them accordingly
+            FindCollisionChecker finder(pm);
+            auto plan = finder.get_plan();
+            auto checkers = finder.available_checkers(plan);
+            if(std::count(checkers.begin(), checkers.end(), collision_checker_type::OCTREE) == 0) {
+                std::cerr << "OCTREE is not an available checker for the given environment." << std::endl;
+                exit(1);
+            }
             // Create boundary
             auto first_half = vec{boundary[0], boundary[1], boundary[2]};
             auto second_half = vec{boundary[3], boundary[4], boundary[5]};
@@ -38,7 +47,14 @@ namespace octree {
                 if (obs.size() != 3) {
                     throw std::runtime_error("Each obstacle must have exactly 3 coordinates.");
                 }
-                octree->Add(BasicOctree::TDataWrapper{{obs[0], obs[1], obs[2]}, obs_len});
+                if(obs.size() == 3)
+                    octree->Add(BasicOctree::TDataWrapper{{obs[0], obs[1], obs[2]}, obs_len});
+                if(obs.size() == 6)
+                {
+                    auto obs_pos = vec{obs[0], obs[1], obs[2]};
+                    auto obs_shape = vec{obs[3], obs[4], obs[5]};
+                    octree->Add(BasicOctree::TDataWrapper{obs_pos, std::max({obs_shape.x, obs_shape.y, obs_shape.z})});
+                }
             }
         }
     };

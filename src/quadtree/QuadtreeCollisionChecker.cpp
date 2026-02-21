@@ -5,7 +5,7 @@
 
 #include "CollisionChecker.hh"
 #include "quadtree/olcUTIL_QuadTree.h"
-
+#include "common/FindCollisionChecker.h"
 namespace quadtree {
 
 struct QuadtreeCollisionChecker::Impl {
@@ -19,21 +19,53 @@ struct QuadtreeCollisionChecker::Impl {
         _x_max = boundary[1];
         _y_min = boundary[2];
         _y_max = boundary[3];
+        initialize_manager(pm);
+    }
 
-        float radii = _robotRadius;
+    void initialize_manager(const ParamPtr& pm){
+        // Use FindCollisionChecker to determine the type of obstacles and load them accordingly
+        FindCollisionChecker finder(pm);
+        auto plan = finder.get_plan();
+        auto checkers = finder.available_checkers(plan);
+        // `FCL` is also the name of this class (fcl::FCL). Use the global-scope enum value to avoid
+        // colliding with the class name inside namespace fcl.
+        if(std::count(checkers.begin(), checkers.end(), collision_checker_type::QUADTREE) == 0) {
+            std::cerr << "QUADTREE is not an available checker for the given environment." << std::endl;
+            exit(1);
+        }
 
-        for(int i = 0; i < obsList.size(); ++i)
-        {
+        if(plan[0] != BOX) {
+            std::cerr << "QUADTREE does not support obstacle type. (make sure obs_type is BOX)" << std::endl;
+            exit(1);
+        }
+
+        auto obsLen = pm->get_param<float>("obstacle_length");
+        obsLen *= 2.0f; // Convert half-length to full length for FCL box geometry
+        for(auto& box : pm->get_ndarray<float>("obstacles")) {
             obstacle obs;
-            obs.id = i + 1;
-            obs.type = 2;
-            obs.x = obsList[i][0];
-            obs.y = obsList[i][1];
-            obs.width = radii;
-            obs.height = radii;
+            switch (plan[2]) {
+                case RECTANGLE:
+                    obs.type = 2;
+                    obs.x = box[0];
+                    obs.y = box[1];
+                    obs.width = box[2];
+                    obs.height = box[3];
+                    break;
+                case SQUARE:
+                    obs.type = 2;
+                    obs.x = box[0];
+                    obs.y = box[1];
+                    obs.width = obsLen;
+                    obs.height = obsLen;
+                    break;
+                default:
+                    std::cerr << "Unknown shape type in plan: " << plan[2] << std::endl;
+            }
+
             olc::utils::geom2d::rect<float> rect{{obs.x, obs.y}, {obs.width, obs.height}};
             obstacles_.insert(obs, rect);
         }
+
     }
 
 
@@ -45,8 +77,8 @@ struct QuadtreeCollisionChecker::Impl {
         robot.type = 2;
         robot.x = wx;
         robot.y = wy;
-        robot.width = _robotRadius ;
-        robot.height = _robotRadius;
+        robot.width = _robotRadius * 2.0f;
+        robot.height = _robotRadius * 2.0f;
         olc::utils::geom2d::rect<float> rect{{robot.x, robot.y}, {robot.width, robot.height}};
 
         auto potential_collisions = obstacles_.search(rect);
