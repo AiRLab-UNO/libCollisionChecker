@@ -1,0 +1,38 @@
+digraph G {
+    obstacle -> box
+    obstacle -> triangles
+    obstacle -> image
+
+    box -> dim_2D
+    box -> dim_3D
+
+
+    dim_2D -> rectangle
+    dim_2D -> square
+
+    dim_3D -> cube
+    dim_3D -> cuboid
+
+    image -> OCCUPANCY
+
+    rectangle -> FCL
+    rectangle -> VAMP
+    rectangle -> QUADTREE
+
+    square -> FCL
+    square -> VAMP
+    square -> QUADTREE
+
+
+    cube -> OCTREE
+    cube -> FCL
+    cube -> VAMP
+
+
+    cuboid -> OCTREE
+    cuboid -> FCL
+    cuboid -> VAMP
+
+    triangles ->FCL
+
+}

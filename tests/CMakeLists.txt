@@ -112,3 +112,11 @@ add_custom_target(run_all_tests
         $<$<BOOL:${BUILD_CC_FCL}>:fcl_collision_checker_test>
         $<$<BOOL:${BUILD_CC_VAMP}>:vamp_collision_checker_test>
 )
+
+
+add_executable(test_find_collision_checker
+        test_find_collision_checker.cpp
+)
+target_link_libraries(test_find_collision_checker
+        ${TEST_LIBRARIES}
+)

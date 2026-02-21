@@ -39,6 +39,7 @@ set(CC_OCTREE
 set(CC_FCL
         src/FCL/FCL.cpp
         include/FCL/FCL.h
+        include/common/FindCollisionChecker.h
 )
 
 set(CC_OCCUPANCY_MAP

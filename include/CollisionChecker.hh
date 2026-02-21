@@ -12,7 +12,12 @@ using CCPtr = std::shared_ptr<BaseCollisionChecker>;
 
 class BaseCollisionChecker : public std::enable_shared_from_this<BaseCollisionChecker> {
 public:
-    explicit BaseCollisionChecker(const ParamPtr& pm) : pm_(pm) {}
+    explicit BaseCollisionChecker(const ParamPtr& pm) : pm_(pm) {
+        // 3D collisoin checkers are fcl, vamp, octree
+        // 2D collision checkers are quadtree, occupancy map, fcl, vamp,
+        // Image based collision checker is occupancy map
+        // fcl can load triangles as well
+    }
     virtual ~BaseCollisionChecker() = default;
 
     virtual bool isCollision(const std::vector<Eigen::VectorXd>& trajectory) const = 0;
