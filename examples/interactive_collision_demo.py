@@ -52,6 +52,9 @@ class InteractiveCollisionChecker:
         elif cc_type == 'fcl':
             self.checker = cc.FCL(self.param_manager)
             print(f"Using FCL")
+        elif cc_type == 'vamp':
+            self.checker = cc.VampCollisionChecker(self.param_manager)
+            print(f"Using VAMP")
         else:
             # Default to Quadtree
             self.checker = cc.QuadtreeCollisionChecker(self.param_manager)

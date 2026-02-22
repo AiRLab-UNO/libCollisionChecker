@@ -48,11 +48,11 @@ struct VampCollisionChecker::Impl {
         }
 
         auto obsLen = pm->get_param<float>("obstacle_length");
-        obsLen *= 2.0f; // Convert half-length to full length for FCL box geometry
+        // obsLen *= 2.0f; // Convert half-length to full length for FCL box geometry
         for(auto& box : pm->get_ndarray<float>("obstacles")) {
             switch (plan[2]) {
                 case RECTANGLE:
-                    setBox({box[0], box[1], 0.0f, box[2], box[3], obsLen});
+                    setBox({box[0], box[1], 0.0f, box[2] / 2.0f, box[3] / 2.0f, obsLen});
                     break;
                 case SQUARE:
                     setBox({box[0], box[1], 0.0f, obsLen, obsLen, obsLen});
@@ -63,7 +63,7 @@ struct VampCollisionChecker::Impl {
                     break;
                 case CUBOID:
                     is3DObstacles = true;
-                    setBox({box[0], box[1], box[2], box[3], box[4], box[5]});
+                    setBox({box[0], box[1], box[2], box[3] / 2.0f, box[4] / 2.0f, box[5] / 2.0f});
                     break;
                 default:
                     std::cerr << "Unknown shape type in plan: " << plan[2] << std::endl;
