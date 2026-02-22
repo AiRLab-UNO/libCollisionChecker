@@ -33,13 +33,30 @@ class InteractiveTrajectoryChecker:
         
         # Create parameter manager and collision checker
         self.param_manager = cc.ParamManager(yaml_file)
-        self.checker = cc.QuadtreeCollisionChecker(self.param_manager)
+        # self.checker = cc.QuadtreeCollisionChecker(self.param_manager)
+                # Determine which collision checker to use
+        cc_type = self.config.get('collision_checker', 'quadtree').lower()
+        
+        # Map collision checker types
+        if cc_type in ['quadtree', 'olc']:
+            self.checker = cc.QuadtreeCollisionChecker(self.param_manager)
+            print(f"Using QuadtreeCollisionChecker")
+        elif cc_type == 'fcl':
+            self.checker = cc.FCL(self.param_manager)
+            print(f"Using FCL")
+        elif cc_type == 'vamp':
+            self.checker = cc.VampCollisionChecker(self.param_manager)
+            print(f"Using VAMP")
+        else:
+            # Default to Quadtree
+            self.checker = cc.QuadtreeCollisionChecker(self.param_manager)
+            print(f"Using QuadtreeCollisionChecker (default)")
         
         # Extract environment info
         self.obstacles = np.array(self.config.get('obstacles', []))
         self.boundary = self.config.get('boundary', [-20, 1, -20, 2])
         self.robot_radius = self.config.get('robot_radius', 0.345)
-        self.obstacle_size = self.config.get('obstacle_length', 0.25)
+        self.obstacle_size =  self.config.get('obstacle_length', 0.25)
         self.start = self.config.get('start', [0, 0, 0])
         self.goal = self.config.get('goal', [0, 0])
         
@@ -120,16 +137,39 @@ class InteractiveTrajectoryChecker:
         self.ax.add_patch(boundary_rect)
         
         # Draw obstacles
+        # for obs in self.obstacles:
+        #     if len(obs) >= 2:
+        #         x, y = obs[0], obs[1]
+        #         obs_rect = patches.Rectangle(
+        #             (x - self.obstacle_size/2, y - self.obstacle_size/2),
+        #             self.obstacle_size, self.obstacle_size,
+        #             fill=True, facecolor='gray', 
+        #             edgecolor='black', linewidth=1, alpha=0.7
+        #         )
+        #         self.ax.add_patch(obs_rect)
+
         for obs in self.obstacles:
-            if len(obs) >= 2:
-                x, y = obs[0], obs[1]
+            if len(obs) >= 4:
+                # Rectangular obstacle: [x, y, width, height]
+                x, y, width, height = obs[0], obs[1], obs[2], obs[3]
                 obs_rect = patches.Rectangle(
-                    (x - self.obstacle_size/2, y - self.obstacle_size/2),
-                    self.obstacle_size, self.obstacle_size,
+                    (x - width/2, y - height/2),
+                    width, height,
                     fill=True, facecolor='gray', 
                     edgecolor='black', linewidth=1, alpha=0.7
                 )
                 self.ax.add_patch(obs_rect)
+            elif len(obs) >= 2:
+                # Point obstacle: [x, y]
+                x, y = obs[0], obs[1]
+                obs_rect = patches.Rectangle(
+                    (x - self.obstacle_size, y - self.obstacle_size),
+                    self.obstacle_size * 2, self.obstacle_size * 2,
+                    fill=True, facecolor='gray', 
+                    edgecolor='black', linewidth=1, alpha=0.7
+                )
+                self.ax.add_patch(obs_rect)
+        
         
         # Draw start position
         if len(self.start) >= 2:

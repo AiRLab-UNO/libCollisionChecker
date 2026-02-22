@@ -24,8 +24,8 @@ start: [-10.0, -2, 1.5707]
 goal: [0.0, 0.0]
 pref_speed_index: 5
 num_samples: 5 # number of samples for limbo parameter
-boundary: [-20.0, 1.0, -20.0, 2.0]
-origin: [-20.0, -20.0]
+boundary: [-11.0, 1.0, -11.0, 2.0]
+origin: [-11.0, -11.0]
 
 collision_checker: olc
 solver_time: 1.0

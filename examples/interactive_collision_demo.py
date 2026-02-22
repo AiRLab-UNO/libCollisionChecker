@@ -154,8 +154,8 @@ class InteractiveCollisionChecker:
                 # Point obstacle: [x, y]
                 x, y = obs[0], obs[1]
                 obs_rect = patches.Rectangle(
-                    (x - self.obstacle_size/2, y - self.obstacle_size/2),
-                    self.obstacle_size, self.obstacle_size,
+                    (x - self.obstacle_size, y - self.obstacle_size),
+                    self.obstacle_size * 2, self.obstacle_size * 2,
                     fill=True, facecolor='gray', 
                     edgecolor='black', linewidth=1, alpha=0.7
                 )
