@@ -53,10 +53,10 @@ struct QuadtreeCollisionChecker::Impl {
                     break;
                 case SQUARE:
                     obs.type = 2;
-                    obs.x = box[0]; // Center X coordinate of the square
-                    obs.y = box[1]; // Center Y coordinate of the square
+                    obs.x = box[0] - obsLen / 2.0f; // Center X coordinate of the square
+                    obs.y = box[1] - obsLen / 2.0f; // Center Y coordinate of the square
                     obs.width = obsLen;
-                    obs.height = obsLen;
+                    obs.height =obsLen;
                     break;
                 default:
                     std::cerr << "Unknown shape type in plan: " << plan[2] << std::endl;
