@@ -1,6 +1,6 @@
 map_resolution: 0.025
 name: "sr_nonconvex_02"
-map_image_path: "../test/sr_nonconvex_02.png"
+map_image_path: "/home/redwan/research/2026/ResearchWorkspace/BOT-Connect/Code/libcollisionchecker/test/ugv/sr_nonconvex_02.png"
 map_inflation: 13
 color_threshold: 200
 start: [-14.110001, -5.47, 0.469132]

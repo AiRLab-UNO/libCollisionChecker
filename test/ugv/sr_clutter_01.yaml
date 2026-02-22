@@ -1,6 +1,6 @@
 map_resolution: 0.01625
 name: "sr_clutter_01"
-map_image_path: "../test/sr_clutter_01.png"
+map_image_path: "/home/redwan/research/2026/ResearchWorkspace/BOT-Connect/Code/libcollisionchecker/test/ugv/sr_clutter_01.png"
 map_inflation: 21
 color_threshold: 200
 start: [-11.5, -1.00375, 0.785398]

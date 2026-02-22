@@ -1,6 +1,6 @@
 map_resolution: 0.05
 name: "intel"
-map_image_path: "../test/intel_map.png"
+map_image_path: "/home/redwan/research/2026/ResearchWorkspace/BOT-Connect/Code/libcollisionchecker/test/ugv/intel_map.png"
 map_inflation: 8
 color_threshold: 200
 start: [-18.24, 17.65, 1.5707]

@@ -46,15 +46,15 @@ struct QuadtreeCollisionChecker::Impl {
             switch (plan[2]) {
                 case RECTANGLE:
                     obs.type = 2;
-                    obs.x = box[0];
-                    obs.y = box[1];
+                    obs.x = box[0] - box[2] / 2.0f; // Center X coordinate of the rectangle
+                    obs.y = box[1] - box[3] / 2.0f; // Center Y coordinate of the rectangle
                     obs.width = box[2];
                     obs.height = box[3];
                     break;
                 case SQUARE:
                     obs.type = 2;
-                    obs.x = box[0];
-                    obs.y = box[1];
+                    obs.x = box[0]; // Center X coordinate of the square
+                    obs.y = box[1]; // Center Y coordinate of the square
                     obs.width = obsLen;
                     obs.height = obsLen;
                     break;
@@ -75,10 +75,11 @@ struct QuadtreeCollisionChecker::Impl {
         obstacle robot;
         robot.id = 0;
         robot.type = 2;
-        robot.x = wx;
-        robot.y = wy;
+        robot.x = wx - _robotRadius;  // Center X coordinate of the robot
+        robot.y = wy - _robotRadius;  // Center Y coordinate of the robot
         robot.width = _robotRadius * 2.0f;
         robot.height = _robotRadius * 2.0f;
+
         olc::utils::geom2d::rect<float> rect{{robot.x, robot.y}, {robot.width, robot.height}};
 
         auto potential_collisions = obstacles_.search(rect);

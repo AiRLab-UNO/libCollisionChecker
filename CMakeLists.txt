@@ -22,6 +22,7 @@ option(BUILD_CC_OCCUPANCY_MAP "BUILD OCCUPANCY MAP COLLISION CHECKER" ON)
 option(BUILD_CC_FCL "BUILD FCL COLLISION CHECKER" ON)
 option(BUILD_CC_VAMP "BUILD VAMP COLLISION CHECKER" ON)
 option(BUILD_TESTING "BUILD TESTS" ON)
+option(BUILD_PYTHON_BINDINGS "BUILD PYTHON BINDINGS WITH PYBIND11" ON)
 
 
 set(CC_VAMP
@@ -105,4 +106,56 @@ endif()
 if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)
+endif()
+# Build Python bindings if requested
+if(BUILD_PYTHON_BINDINGS)
+    # Find Python and pybind11
+    find_package(Python COMPONENTS Interpreter Development REQUIRED)
+    find_package(pybind11 CONFIG REQUIRED)
+    
+    # Create Python module
+    pybind11_add_module(collision_checker_py src/python_bindings.cpp)
+    
+    # Link all collision checker libraries that are built
+    set(COLLISION_CHECKER_LIBS "")
+    
+    if(BUILD_CC_OCTREE)
+        list(APPEND COLLISION_CHECKER_LIBS OctreeCollisionChecker)
+    endif()
+    
+    if(BUILD_CC_QUAD_TREE)
+        list(APPEND COLLISION_CHECKER_LIBS QuadtreeCollisionChecker)
+    endif()
+    
+    if(BUILD_CC_OCCUPANCY_MAP)
+        list(APPEND COLLISION_CHECKER_LIBS OccupancyMap)
+    endif()
+    
+    if(BUILD_CC_FCL)
+        list(APPEND COLLISION_CHECKER_LIBS FCL)
+    endif()
+    
+    if(BUILD_CC_VAMP)
+        list(APPEND COLLISION_CHECKER_LIBS VampCollisionChecker)
+    endif()
+    
+    target_link_libraries(collision_checker_py PRIVATE 
+        ${COLLISION_CHECKER_LIBS}
+        Eigen3::Eigen
+        yaml-cpp
+    )
+    
+    target_include_directories(collision_checker_py PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    
+    # Install Python module
+    install(TARGETS collision_checker_py
+        LIBRARY DESTINATION ${Python_SITEARCH}
+        COMPONENT python
+    )
+    
+    message(STATUS "Python bindings will be built")
+    message(STATUS "Python executable: ${Python_EXECUTABLE}")
+    message(STATUS "Python site-arch: ${Python_SITEARCH}")
 endif()

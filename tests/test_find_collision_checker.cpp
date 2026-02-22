@@ -8,6 +8,8 @@ const std::string env1 = "/home/redwan/research/2026/ResearchWorkspace/BOT-Conne
 const std::string quad1 = "/home/redwan/research/2026/ResearchWorkspace/BOT-Connect/Code/libcollisionchecker/test/uav/quad1.yaml";
 const std::string img1 = "/home/redwan/research/2026/ResearchWorkspace/BOT-Connect/Code/libcollisionchecker/test/ugv/sr_clutter_01.yaml";
 const std::string tri1 = "/home/redwan/research/2026/ResearchWorkspace/BOT-Connect/Code/libcollisionchecker/test/ugv/env_bug_trap.yaml";
+const std::string rect1 = "/home/redwan/research/2026/ResearchWorkspace/BOT-Connect/Code/libcollisionchecker/test/ugv/env_rectangles.yaml";
+
 // Defining a Test Case
 TEST(FindCollisionChecker, PlanGeneration) {
 
@@ -20,7 +22,7 @@ TEST(FindCollisionChecker, PlanGeneration) {
 }
 
 TEST(FindCollisionChecker, AvailableCheckers) {
-    for(auto env : {env1, quad1, img1, tri1}) {
+    for(auto env : {env1, quad1, img1, tri1, rect1}) {
          auto params = std::make_shared<param_manager>(env);
         FindCollisionChecker finder(params);
         auto plan = finder.get_plan();

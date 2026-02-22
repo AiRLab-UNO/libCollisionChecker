@@ -1,0 +1,20 @@
+# Note: For C++ extensions with CMake, use direct CMake build instead of pip install
+# See INSTALL_WITH_UV.md for installation instructions
+
+[project]
+name = "libcollisionchecker"
+version = "0.1.0"
+description = "Python bindings for libCollisionChecker with numpy array support"
+readme = "examples/PYTHON_BINDINGS_README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.19.0",
+    "pybind11>=2.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "black>=21.0",
+    "isort>=5.0",
+]
